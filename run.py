@@ -30,6 +30,7 @@ arguments_strModel = 'default' # 'default', or 'chairs-things'
 arguments_strOne = './images/one.png'
 arguments_strTwo = './images/two.png'
 arguments_strOut = './out.flo'
+arguments_video = './videos/video.mp4'
 
 for strOption, strArgument in getopt.getopt(sys.argv[1:], '', [ strParameter[2:] + '=' for strParameter in sys.argv[1::2] ])[0]:
 	if strOption == '--model' and strArgument != '': arguments_strModel = strArgument # which model to use
@@ -313,6 +314,9 @@ def estimate(tenOne, tenTwo):
 ##########################################################
 
 if __name__ == '__main__':
+	# for two consecutive frames, run the model
+	# which means, we have to save all the frames from a video using an opencv library
+
 	tenOne = torch.FloatTensor(numpy.ascontiguousarray(numpy.array(PIL.Image.open(arguments_strOne))[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32) * (1.0 / 255.0)))
 	tenTwo = torch.FloatTensor(numpy.ascontiguousarray(numpy.array(PIL.Image.open(arguments_strTwo))[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32) * (1.0 / 255.0)))
 
