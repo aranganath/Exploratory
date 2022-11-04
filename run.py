@@ -27,8 +27,8 @@ torch.backends.cudnn.enabled = True # make sure to use cudnn for computational p
 ##########################################################
 
 arguments_strModel = 'default' # 'default', or 'chairs-things'
-arguments_strOne = './images/one.png'
-arguments_strTwo = './images/two.png'
+arguments_strOne = '/home/azar/gopro/test/GOPR0384_11_00/000001.png'
+arguments_strTwo = '/home/azar/gopro/test/GOPR0384_11_00/000002.png'
 arguments_strOut = './out.flo'
 arguments_video = './videos/video.mp4'
 
@@ -272,46 +272,41 @@ class Network(torch.nn.Module):
 
 		return (objEstimate['tenFlow'] + self.netRefiner(objEstimate['tenFeat'])) * 20.0
 	# end
-# end
-
+ # end
+    
 netNetwork = None
 
 ##########################################################
 
 def estimate(tenOne, tenTwo):
-	global netNetwork
+    global netNetwork
 
-	if netNetwork is None:
-		netNetwork = Network().cuda().eval()
-	# end
+    if netNetwork is None:
+        netNetwork = Network().cuda().eval()
+	    # end
+    assert(tenOne.shape[1] == tenTwo.shape[1])
+    assert(tenOne.shape[2] == tenTwo.shape[2])
+    intWidth = tenOne.shape[2]
+    intHeight = tenOne.shape[1]
 
-	assert(tenOne.shape[1] == tenTwo.shape[1])
-	assert(tenOne.shape[2] == tenTwo.shape[2])
+   # assert(intWidth == 1024) # remember that there is no guarantee for correctness, comment this line out if you acknowledge this and want to continue
+    
+    #assert(intHeight == 436) # remember that there is no guarantee for correctness, comment this line out if you acknowledge this and want to continue
 
-	intWidth = tenOne.shape[2]
-	intHeight = tenOne.shape[1]
+    tenPreprocessedOne = tenOne.cuda().view(1, 3, intHeight, intWidth)
+    tenPreprocessedTwo = tenTwo.cuda().view(1, 3, intHeight, intWidth)
 
-	assert(intWidth == 1024) # remember that there is no guarantee for correctness, comment this line out if you acknowledge this and want to continue
-	assert(intHeight == 436) # remember that there is no guarantee for correctness, comment this line out if you acknowledge this and want to continue
-
-	tenPreprocessedOne = tenOne.cuda().view(1, 3, intHeight, intWidth)
-	tenPreprocessedTwo = tenTwo.cuda().view(1, 3, intHeight, intWidth)
-
-	intPreprocessedWidth = int(math.floor(math.ceil(intWidth / 64.0) * 64.0))
-	intPreprocessedHeight = int(math.floor(math.ceil(intHeight / 64.0) * 64.0))
-
-	tenPreprocessedOne = torch.nn.functional.interpolate(input=tenPreprocessedOne, size=(intPreprocessedHeight, intPreprocessedWidth), mode='bilinear', align_corners=False)
-	tenPreprocessedTwo = torch.nn.functional.interpolate(input=tenPreprocessedTwo, size=(intPreprocessedHeight, intPreprocessedWidth), mode='bilinear', align_corners=False)
-
-	tenFlow = torch.nn.functional.interpolate(input=netNetwork(tenPreprocessedOne, tenPreprocessedTwo), size=(intHeight, intWidth), mode='bilinear', align_corners=False)
-
-	tenFlow[:, 0, :, :] *= float(intWidth) / float(intPreprocessedWidth)
-	tenFlow[:, 1, :, :] *= float(intHeight) / float(intPreprocessedHeight)
-
-	return tenFlow[0, :, :, :].cpu()
+    intPreprocessedWidth = int(math.floor(math.ceil(intWidth / 64.0) * 64.0))
+    intPreprocessedHeight = int(math.floor(math.ceil(intHeight / 64.0) * 64.0))
+    tenPreprocessedOne = torch.nn.functional.interpolate(input=tenPreprocessedOne, size=(intPreprocessedHeight, intPreprocessedWidth), mode='bilinear', align_corners=False)
+    tenPreprocessedTwo = torch.nn.functional.interpolate(input=tenPreprocessedTwo, size=(intPreprocessedHeight, intPreprocessedWidth), mode='bilinear', align_corners=False)
+    tenFlow = torch.nn.functional.interpolate(input=netNetwork(tenPreprocessedOne, tenPreprocessedTwo), size=(intHeight, intWidth), mode='bilinear', align_corners=False)
+    tenFlow[:, 0, :, :] *= float(intWidth) / float(intPreprocessedWidth)
+    tenFlow[:, 1, :, :] *= float(intHeight) / float(intPreprocessedHeight)
+    return tenFlow[0, :, :, :].cpu()
 # end
 
-##########################################################
+########################################################
 
 if __name__ == '__main__':
 	# for two consecutive frames, run the model
