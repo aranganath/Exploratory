@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import torch
-  
+   
 import getopt
 import math
 import numpy
